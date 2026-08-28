@@ -33,6 +33,7 @@ export type Business = {
   city?: string | null;
   state?: string | null;
   primary_color?: string | null;
+  secondary_color?: string | null;
   is_active: boolean;
 };
 

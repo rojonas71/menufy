@@ -40,7 +40,9 @@ export function DashboardPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!supabase) {
+    const client = supabase;
+
+    if (!client) {
       setMessage("Supabase não configurado.");
       setConnection("offline");
       setLoading(false);
@@ -48,14 +50,14 @@ export function DashboardPage() {
     }
 
     const load = async () => {
-      const { data: authData } = await supabase.auth.getUser();
+      const { data: authData } = await client.auth.getUser();
 
       if (!authData.user) {
         navigate("/login", { replace: true });
         return;
       }
 
-      const { data: businessData, error: businessError } = await supabase
+      const { data: businessData, error: businessError } = await client
         .from("businesses")
         .select("id,name,slug")
         .eq("owner_id", authData.user.id)
@@ -75,7 +77,7 @@ export function DashboardPage() {
 
       setBusiness(businessData as OwnedBusiness);
 
-      const { data: orderData, error: ordersError } = await supabase
+      const { data: orderData, error: ordersError } = await client
         .from("orders")
         .select("id,order_number,customer_name,status,total,created_at")
         .eq("business_id", businessData.id)
@@ -92,9 +94,10 @@ export function DashboardPage() {
   }, [navigate]);
 
   useEffect(() => {
-    if (!supabase || !business?.id) return;
+    const client = supabase;
+    if (!client || !business?.id) return;
 
-    const channel = supabase
+    const channel = client
       .channel(`dashboard-orders:${business.id}`)
       .on(
         "postgres_changes",
@@ -140,7 +143,7 @@ export function DashboardPage() {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, [business?.id]);
 

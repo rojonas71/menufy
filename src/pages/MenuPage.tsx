@@ -21,7 +21,9 @@ export function MenuPage() {
   );
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase || !slug) {
+    const client = supabase;
+
+    if (!isSupabaseConfigured || !client || !slug) {
       setLoading(false);
       setNotFound(true);
       return;
@@ -31,7 +33,7 @@ export function MenuPage() {
       setLoading(true);
       setNotFound(false);
 
-      const { data: businessData, error: businessError } = await supabase
+      const { data: businessData, error: businessError } = await client
         .from("businesses")
         .select("*")
         .eq("slug", slug)
@@ -50,13 +52,13 @@ export function MenuPage() {
       setBusiness(businessData as Business);
 
       const [{ data: categoryData }, { data: productData }] = await Promise.all([
-        supabase
+        client
           .from("categories")
           .select("*")
           .eq("business_id", businessData.id)
           .eq("is_active", true)
           .order("sort_order"),
-        supabase
+        client
           .from("products")
           .select("*")
           .eq("business_id", businessData.id)
@@ -73,9 +75,10 @@ export function MenuPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!supabase || !business?.id) return;
+    const client = supabase;
+    if (!client || !business?.id) return;
 
-    const channel = supabase
+    const channel = client
       .channel(`menu:${business.id}`)
       .on(
         "postgres_changes",
@@ -139,7 +142,7 @@ export function MenuPage() {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, [business?.id]);
 
