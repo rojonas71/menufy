@@ -30,7 +30,9 @@ export function OnboardingPage() {
     whatsapp: "",
     instagram: "",
     city: "",
-    state: ""
+    state: "",
+    logo_url: "",
+    cover_url: ""
   });
 
   const [category, setCategory] = useState({
@@ -107,6 +109,8 @@ export function OnboardingPage() {
       instagram: business.instagram.trim() || null,
       city: business.city.trim() || null,
       state: business.state.trim().toUpperCase() || null,
+      logo_url: business.logo_url.trim() || null,
+      cover_url: business.cover_url.trim() || null,
       is_active: true
     };
 

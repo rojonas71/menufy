@@ -1,7 +1,15 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ExternalLink, Palette, Save } from "lucide-react";
+import {
+  ExternalLink,
+  ImagePlus,
+  Palette,
+  Save,
+  Trash2,
+  Upload
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { DashboardShell } from "../components/DashboardShell";
+import { uploadBrandingAsset } from "../lib/brandingUpload";
 import { supabase } from "../lib/supabase";
 
 type BusinessAppearance = {
@@ -15,18 +23,29 @@ type BusinessAppearance = {
   secondary_color: string | null;
 };
 
+type AppearanceForm = {
+  logo_url: string;
+  cover_url: string;
+  primary_color: string;
+  secondary_color: string;
+};
+
+const defaultForm: AppearanceForm = {
+  logo_url: "",
+  cover_url: "",
+  primary_color: "#ff6b00",
+  secondary_color: "#18120e"
+};
+
 export function AppearancePage() {
   const navigate = useNavigate();
   const [business, setBusiness] = useState<BusinessAppearance | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [form, setForm] = useState({
-    logo_url: "",
-    cover_url: "",
-    primary_color: "#ff6b00",
-    secondary_color: "#18120e"
-  });
+  const [form, setForm] = useState<AppearanceForm>(defaultForm);
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +53,8 @@ export function AppearancePage() {
 
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return navigate("/login", { replace: true });
+
+      setUserId(auth.user.id);
 
       const { data, error } = await supabase
         .from("businesses")
@@ -61,8 +82,10 @@ export function AppearancePage() {
     load();
   }, [navigate]);
 
-  const save = async (event: FormEvent) => {
-    event.preventDefault();
+  const persistAppearance = async (
+    nextForm: AppearanceForm,
+    successMessage = "Aparência atualizada com sucesso."
+  ) => {
     if (!supabase || !business) return;
 
     setSaving(true);
@@ -71,23 +94,87 @@ export function AppearancePage() {
     const { data, error } = await supabase
       .from("businesses")
       .update({
-        logo_url: form.logo_url.trim() || null,
-        cover_url: form.cover_url.trim() || null,
-        primary_color: form.primary_color,
-        secondary_color: form.secondary_color,
+        logo_url: nextForm.logo_url.trim() || null,
+        cover_url: nextForm.cover_url.trim() || null,
+        primary_color: nextForm.primary_color,
+        secondary_color: nextForm.secondary_color,
         updated_at: new Date().toISOString()
       })
       .eq("id", business.id)
       .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color")
       .single();
 
-    if (error) setMessage(error.message);
-    else {
+    if (error) {
+      setMessage(error.message);
+    } else {
       setBusiness(data as BusinessAppearance);
-      setMessage("Aparência atualizada com sucesso.");
+      setForm({
+        logo_url: data.logo_url || "",
+        cover_url: data.cover_url || "",
+        primary_color: data.primary_color || "#ff6b00",
+        secondary_color: data.secondary_color || "#18120e"
+      });
+      setMessage(successMessage);
     }
 
     setSaving(false);
+  };
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    await persistAppearance(form);
+  };
+
+  const handleUpload = async (kind: "logo" | "cover", file?: File | null) => {
+    if (!file || !business || !userId) return;
+
+    setMessage("");
+
+    try {
+      kind === "logo" ? setUploadingLogo(true) : setUploadingCover(true);
+
+      const publicUrl = await uploadBrandingAsset({
+        file,
+        businessId: business.id,
+        userId,
+        kind
+      });
+
+      const nextForm = {
+        ...form,
+        [kind === "logo" ? "logo_url" : "cover_url"]: publicUrl
+      } as AppearanceForm;
+
+      setForm(nextForm);
+      await persistAppearance(
+        nextForm,
+        kind === "logo"
+          ? "Logo atualizada com sucesso."
+          : "Imagem de capa atualizada com sucesso."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Não foi possível enviar a imagem."
+      );
+    } finally {
+      kind === "logo" ? setUploadingLogo(false) : setUploadingCover(false);
+    }
+  };
+
+  const removeAsset = async (kind: "logo" | "cover") => {
+    const nextForm = {
+      ...form,
+      [kind === "logo" ? "logo_url" : "cover_url"]: ""
+    } as AppearanceForm;
+
+    setForm(nextForm);
+
+    await persistAppearance(
+      nextForm,
+      kind === "logo"
+        ? "Logo removida com sucesso."
+        : "Imagem de capa removida com sucesso."
+    );
   };
 
   return (
@@ -97,7 +184,7 @@ export function AppearancePage() {
           <span className="eyebrow">Personalização</span>
           <h1>Aparência</h1>
           <p className="dashboard-subtitle">
-            Personalize a identidade visual do seu cardápio.
+            Atualize logo, imagem de capa e cores do seu cardápio.
           </p>
         </div>
 
@@ -113,7 +200,103 @@ export function AppearancePage() {
       ) : (
         <div className="appearance-layout">
           <section className="dashboard-panel">
-            <form className="form-grid" onSubmit={save}>
+            <div className="appearance-section-title">
+              <ImagePlus size={18} />
+              Logo e imagem de capa
+            </div>
+
+            <div className="branding-upload-grid">
+              <article className="branding-upload-card">
+                <div className="branding-upload-preview branding-upload-preview-logo">
+                  {form.logo_url ? <img src={form.logo_url} alt="Logo" /> : <span>🍽️</span>}
+                </div>
+
+                <div className="branding-upload-content">
+                  <strong>Logo do estabelecimento</strong>
+                  <p>
+                    Envie sua logo em PNG, JPG, WEBP ou SVG.
+                    Recomendado: formato quadrado.
+                  </p>
+
+                  <div className="branding-upload-actions">
+                    <label className="button button-outline">
+                      <Upload size={16} />
+                      {uploadingLogo ? "Enviando..." : "Enviar logo"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        hidden
+                        disabled={uploadingLogo || saving}
+                        onChange={(event) =>
+                          handleUpload("logo", event.target.files?.[0] || null)
+                        }
+                      />
+                    </label>
+
+                    {form.logo_url && (
+                      <button
+                        type="button"
+                        className="button button-outline danger-outline"
+                        disabled={saving}
+                        onClick={() => removeAsset("logo")}
+                      >
+                        <Trash2 size={16} /> Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+
+              <article className="branding-upload-card">
+                <div
+                  className="branding-upload-preview branding-upload-preview-cover"
+                  style={{
+                    backgroundImage: form.cover_url
+                      ? `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.38)), url(${form.cover_url})`
+                      : undefined,
+                    backgroundColor: form.secondary_color
+                  }}
+                >
+                  {!form.cover_url && <span>Imagem de capa</span>}
+                </div>
+
+                <div className="branding-upload-content">
+                  <strong>Imagem de capa</strong>
+                  <p>
+                    Ideal para destacar seu cardápio. Recomendado formato retangular.
+                  </p>
+
+                  <div className="branding-upload-actions">
+                    <label className="button button-outline">
+                      <Upload size={16} />
+                      {uploadingCover ? "Enviando..." : "Enviar capa"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        hidden
+                        disabled={uploadingCover || saving}
+                        onChange={(event) =>
+                          handleUpload("cover", event.target.files?.[0] || null)
+                        }
+                      />
+                    </label>
+
+                    {form.cover_url && (
+                      <button
+                        type="button"
+                        className="button button-outline danger-outline"
+                        disabled={saving}
+                        onClick={() => removeAsset("cover")}
+                      >
+                        <Trash2 size={16} /> Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <form className="form-grid appearance-form-extended" onSubmit={save}>
               <label className="full">
                 URL da logo
                 <input
@@ -121,6 +304,7 @@ export function AppearancePage() {
                   onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
                   placeholder="https://..."
                 />
+                <small>Opcional: use uma URL externa se preferir.</small>
               </label>
 
               <label className="full">
@@ -130,6 +314,7 @@ export function AppearancePage() {
                   onChange={(e) => setForm({ ...form, cover_url: e.target.value })}
                   placeholder="https://..."
                 />
+                <small>Opcional: também pode colar uma URL pública.</small>
               </label>
 
               <label>
@@ -174,13 +359,15 @@ export function AppearancePage() {
           <section className="appearance-preview-card">
             <div className="appearance-preview-title">
               <Palette size={18} />
-              Prévia
+              Prévia do cardápio
             </div>
 
             <div
               className="appearance-preview-cover"
               style={{
-                backgroundImage: form.cover_url ? `url(${form.cover_url})` : undefined,
+                backgroundImage: form.cover_url
+                  ? `linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.40)), url(${form.cover_url})`
+                  : undefined,
                 backgroundColor: form.secondary_color
               }}
             />
