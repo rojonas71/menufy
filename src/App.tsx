@@ -28,6 +28,7 @@ export default function App() {
           <Route path="/menu/:slug" element={<MenuPage />} />
           <Route path="/menu/:slug/checkout" element={<CheckoutPage />} />
           <Route path="/menu/:slug/sucesso" element={<SuccessPage />} />
+          <Route path="/dev" element={<DevAdminPage />} />
         </Routes>
       </CartProvider>
     </BrowserRouter>
