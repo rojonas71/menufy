@@ -76,7 +76,9 @@ function whatsappPlanUrl(
   billingCycle: BillingCycle,
   price: number
 ) {
-  const rawNumber = (import.meta.env.VITE_SALES_WHATSAPP as string | undefined) || "";
+  const rawNumber =
+    (import.meta.env.VITE_SALES_WHATSAPP as string | undefined) ||
+    "5517982265866";
   const number = rawNumber.replace(/\D/g, "");
 
   const period = billingCycle === "monthly" ? "Mensal" : "Anual";
