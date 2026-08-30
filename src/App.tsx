@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { AppearancePage } from "./pages/AppearancePage";
 import { CartProvider } from "./context/CartContext";
@@ -7,8 +7,8 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DevAdminPage } from "./pages/DevAdminPage";
 import { LandingPage } from "./pages/LandingPage";
+import { RootPage } from "./pages/RootPage";
 import { LoginPage } from "./pages/LoginPage";
-import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { MenuPage } from "./pages/MenuPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -26,10 +26,10 @@ export default function App() {
       <BrowserRouter>
         <CartProvider>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<RootPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
-            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+            <Route path="/redefinir-senha" element={<Navigate to="/esqueci-senha" replace />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
 
             <Route path="/dashboard" element={<DashboardPage />} />

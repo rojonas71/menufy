@@ -2381,3 +2381,13 @@ button { cursor: pointer; }
     width: 100%;
   }
 }
+
+
+/* Password Recovery Advanced 2.1 */
+.auth-success-message>div strong,.auth-success-message>div span{display:block}.auth-success-message>div span{margin-top:3px}
+.recovery-resend{margin-top:18px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:12px;background:#fffaf6}.recovery-resend p{margin:0;color:#6e645d;font-size:12px}.recovery-resend button{border:0;background:transparent;color:var(--primary);display:inline-flex;align-items:center;gap:5px;font-weight:850;cursor:pointer}.recovery-resend button:disabled{color:#a79d96;cursor:not-allowed}
+.recovery-help{margin-top:15px;padding:14px;display:grid;gap:5px;border-radius:12px;background:#f7f4f2;color:#786e67;font-size:11px;line-height:1.5}.recovery-help strong{color:#4e4641;margin-bottom:2px}
+.password-visibility-button{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border:0;border-radius:9px;background:transparent;color:#81766f;cursor:pointer}.password-visibility-button:hover{background:#f6f1ed}
+.password-strength{margin-top:-2px}.password-strength-head{margin-bottom:7px;display:flex;justify-content:space-between;color:#756b64;font-size:11px}.password-strength-head strong{color:#514943}.password-strength-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.password-strength-bars span{height:5px;border-radius:999px;background:#eee9e5}.password-strength-bars span.active{background:var(--primary)}
+.password-rules{padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:7px;border:1px solid var(--line);border-radius:12px;background:#faf8f6}.password-rules>div,.password-match{display:flex;align-items:center;gap:6px;color:#92766c;font-size:11px}.password-rules>div.valid,.password-match.valid{color:#177342}.password-match{margin-top:-3px}.expired-recovery{display:grid;gap:13px}
+@media(max-width:520px){.recovery-resend{align-items:flex-start;flex-direction:column}.password-rules{grid-template-columns:1fr}}
