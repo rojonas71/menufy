@@ -5,6 +5,9 @@ import {
   Menu,
   Package,
   Palette,
+  ShoppingBag,
+  Settings2,
+  ScrollText,
   QrCode,
   ShieldCheck,
   Tags,
@@ -44,6 +47,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       label: "Produtos",
       shortLabel: "Produtos",
       icon: Package
+    },    {
+      to: "/dashboard/pedidos",
+      label: "Pedidos",
+      shortLabel: "Pedidos",
+      icon: ShoppingBag
     },
     {
       to: "/dashboard/aparencia",
@@ -61,9 +69,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const active = (path: string) => location.pathname === path;
 
-  const currentPage = location.pathname === "/dev"
-    ? "Admin Dev"
-    : navItems.find((item) => active(item.to))?.label || "Painel";
+  const currentPage =
+    location.pathname === "/dev" ? "Admin Dev" :
+    location.pathname === "/dev/configuracoes" ? "Configurações" :
+    location.pathname === "/dev/auditoria" ? "Auditoria" :
+    navItems.find((item) => active(item.to))?.label || "Painel";
 
 
   useEffect(() => {
@@ -120,10 +130,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ))}
 
           {isDevAdmin && (
-            <Link className={active("/dev") ? "active dev-admin-link" : "dev-admin-link"} to="/dev">
-              <ShieldCheck size={19} />
-              Admin Dev
-            </Link>
+            <div className="dev-sidebar-group">
+              <Link className={active("/dev") ? "active dev-admin-link" : "dev-admin-link"} to="/dev"><ShieldCheck size={19}/>Admin Dev</Link>
+              <Link className={active("/dev/configuracoes") ? "active dev-admin-link" : "dev-admin-link"} to="/dev/configuracoes"><Settings2 size={18}/>Configurações</Link>
+              <Link className={active("/dev/auditoria") ? "active dev-admin-link" : "dev-admin-link"} to="/dev/auditoria"><ScrollText size={18}/>Auditoria</Link>
+            </div>
           )}
 
           <button className="sidebar-logout" onClick={logout}>
@@ -185,13 +196,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </nav>
 
             {isDevAdmin && (
-              <Link
-                to="/dev"
-                className={active("/dev") ? "mobile-dev-admin-link active" : "mobile-dev-admin-link"}
-              >
-                <ShieldCheck size={20} />
-                <span>Admin Dev</span>
-              </Link>
+              <div className="mobile-dev-group">
+                <Link to="/dev" className={active("/dev") ? "mobile-dev-admin-link active" : "mobile-dev-admin-link"}><ShieldCheck size={20}/><span>Admin Dev</span></Link>
+                <Link to="/dev/configuracoes" className={active("/dev/configuracoes") ? "mobile-dev-admin-link active" : "mobile-dev-admin-link"}><Settings2 size={20}/><span>Configurações</span></Link>
+                <Link to="/dev/auditoria" className={active("/dev/auditoria") ? "mobile-dev-admin-link active" : "mobile-dev-admin-link"}><ScrollText size={20}/><span>Auditoria</span></Link>
+              </div>
             )}
 
             <div className="mobile-drawer-footer">
@@ -207,7 +216,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main className="dashboard-main">{children}</main>
 
       <nav className="mobile-bottom-nav" aria-label="Navegação principal">
-        {navItems.map(({ to, shortLabel, icon: Icon }) => (
+        {navItems.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => (
           <Link
             key={to}
             to={to}

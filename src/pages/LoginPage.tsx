@@ -49,6 +49,9 @@ export function LoginPage() {
           <button className="button button-full">
             {mode === "login" ? "Entrar" : "Criar conta"}
           </button>
+          <div className="login-help-row">
+            <Link to="/esqueci-senha">Esqueci minha senha</Link>
+          </div>
         </form>
         <button className="text-button" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
           {mode === "login" ? "Ainda não tenho conta" : "Já tenho uma conta"}

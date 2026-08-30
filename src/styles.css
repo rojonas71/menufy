@@ -2258,3 +2258,126 @@ button { cursor: pointer; }
     justify-content: center;
   }
 }
+
+
+/* Menufy Advanced 2.0 */
+.dev-sidebar-group,.mobile-dev-group{display:grid;gap:6px;margin-top:12px}.dev-sidebar-group .dev-admin-link,.mobile-dev-group .mobile-dev-admin-link{margin-top:0}
+.advanced-filter-row{display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:10px;margin-bottom:18px}.advanced-filter-row>select{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.business-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.business-order-card{padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}.business-order-head,.business-order-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}.business-order-head>div strong,.business-order-head>div span{display:block}.business-order-head>div span{margin-top:3px;color:var(--muted);font-size:11px}.business-order-customer{margin-top:15px}.business-order-customer strong,.business-order-customer span{display:block}.business-order-customer span{margin-top:4px;color:var(--muted);font-size:12px}.business-order-meta{margin-top:11px;display:flex;gap:7px;flex-wrap:wrap}.business-order-meta span{padding:5px 8px;border-radius:999px;background:#f5f1ee;color:#6e645d;font-size:10px;font-weight:800}.business-order-notes{margin:12px 0 0;padding:10px;border-radius:10px;background:#fff9f4;color:#6d5a4d;font-size:12px}.business-order-footer{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}.business-order-footer select{min-height:40px;padding:0 9px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.advanced-settings-panel{max-width:850px}.advanced-toggle-list{margin:22px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}.advanced-toggle-card{min-height:86px;padding:15px;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:14px;background:#fff}.advanced-toggle-card input{width:19px;height:19px;margin-top:2px}.advanced-toggle-card strong,.advanced-toggle-card span{display:block}.advanced-toggle-card span{margin-top:4px;color:var(--muted);font-size:12px}.advanced-toggle-card.danger{border-color:#efd4cf;background:#fff9f8}
+.audit-search{width:min(520px,100%);margin-bottom:18px}.audit-list{display:grid;gap:10px}.audit-card{padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:#fff}.audit-card-head{display:flex;justify-content:space-between;gap:12px}.audit-card-head span{color:var(--muted);font-size:11px}.audit-card-meta{margin-top:8px;display:flex;gap:7px;flex-wrap:wrap}.audit-card-meta span{padding:4px 7px;border-radius:999px;background:#f4f0ed;color:#70665f;font-size:10px}.audit-card pre{margin:12px 0 0;padding:10px;overflow:auto;border-radius:10px;background:#18120e;color:#f8eee7;font-size:10px}
+.status-new{background:#fff3df;color:#9d6414}.status-confirmed{background:#e9f4ff;color:#24649a}.status-preparing{background:#fff0df;color:#a55515}.status-out_for_delivery{background:#edeaff;color:#5b4aaa}.status-completed{background:#e9f8ef;color:#177342}.status-cancelled{background:#fff0ee;color:#a74338}
+@media(max-width:900px){.business-order-grid,.advanced-toggle-list{grid-template-columns:1fr}}@media(max-width:600px){.advanced-filter-row{grid-template-columns:1fr}.business-order-footer,.audit-card-head{align-items:stretch;flex-direction:column}.business-order-footer select{width:100%}}
+
+
+/* Password Recovery 2.0.1 */
+.login-help-row {
+  margin-top: -4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.login-help-row a {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.login-help-row a:hover {
+  text-decoration: underline;
+}
+
+.forgot-password-card,
+.reset-password-card {
+  width: min(480px, 100%);
+}
+
+.auth-heading {
+  margin: 26px 0 22px;
+}
+
+.auth-heading h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(30px, 5vw, 40px);
+  letter-spacing: -.04em;
+}
+
+.auth-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.auth-input-with-icon {
+  min-height: 48px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+
+.auth-input-with-icon svg {
+  flex: 0 0 auto;
+  color: #8c8179;
+}
+
+.auth-input-with-icon input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0;
+  background: transparent;
+}
+
+.auth-success-message,
+.auth-error-message,
+.auth-info-message {
+  padding: 12px 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 11px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth-success-message {
+  background: #eaf8ef;
+  color: #176b40;
+}
+
+.auth-error-message {
+  background: #fff0ee;
+  color: #9d4037;
+}
+
+.auth-info-message {
+  background: #eef5ff;
+  color: #315e8b;
+}
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.auth-back-link {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #70665f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (max-width: 600px) {
+  .forgot-password-card,
+  .reset-password-card {
+    width: 100%;
+  }
+}

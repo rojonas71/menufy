@@ -8,12 +8,17 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { DevAdminPage } from "./pages/DevAdminPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { MenuPage } from "./pages/MenuPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { QrCodePage } from "./pages/QrCodePage";
 import { SuccessPage } from "./pages/SuccessPage";
+import { DevAuditPage } from "./pages/DevAuditPage";
+import { DevSettingsPage } from "./pages/DevSettingsPage";
+import { OrdersPage } from "./pages/OrdersPage";
 
 export default function App() {
   return (
@@ -23,15 +28,20 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
 
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/dashboard/categorias" element={<CategoriesPage />} />
             <Route path="/dashboard/produtos" element={<ProductsPage />} />
+            <Route path="/dashboard/pedidos" element={<OrdersPage />} />
             <Route path="/dashboard/aparencia" element={<AppearancePage />} />
             <Route path="/dashboard/qrcode" element={<QrCodePage />} />
 
             <Route path="/dev" element={<DevAdminPage />} />
+            <Route path="/dev/configuracoes" element={<DevSettingsPage />} />
+            <Route path="/dev/auditoria" element={<DevAuditPage />} />
 
             <Route path="/menu/:slug" element={<MenuPage />} />
             <Route path="/menu/:slug/checkout" element={<CheckoutPage />} />
