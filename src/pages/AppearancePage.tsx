@@ -4,6 +4,7 @@ import {
   ImagePlus,
   Palette,
   Save,
+  Store,
   Trash2,
   Upload
 } from "lucide-react";
@@ -21,6 +22,14 @@ type BusinessAppearance = {
   cover_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
+  is_open?: boolean;
+  delivery_enabled?: boolean;
+  pickup_enabled?: boolean;
+  dine_in_enabled?: boolean;
+  delivery_fee?: number;
+  minimum_order?: number;
+  estimated_delivery_min?: number | null;
+  estimated_delivery_max?: number | null;
 };
 
 type AppearanceForm = {
@@ -28,13 +37,29 @@ type AppearanceForm = {
   cover_url: string;
   primary_color: string;
   secondary_color: string;
+  is_open: boolean;
+  delivery_enabled: boolean;
+  pickup_enabled: boolean;
+  dine_in_enabled: boolean;
+  delivery_fee: string;
+  minimum_order: string;
+  estimated_delivery_min: string;
+  estimated_delivery_max: string;
 };
 
 const defaultForm: AppearanceForm = {
   logo_url: "",
   cover_url: "",
   primary_color: "#ff6b00",
-  secondary_color: "#18120e"
+  secondary_color: "#18120e",
+  is_open: true,
+  delivery_enabled: true,
+  pickup_enabled: true,
+  dine_in_enabled: true,
+  delivery_fee: "0",
+  minimum_order: "0",
+  estimated_delivery_min: "",
+  estimated_delivery_max: ""
 };
 
 export function AppearancePage() {
@@ -58,7 +83,7 @@ export function AppearancePage() {
 
       const { data, error } = await supabase
         .from("businesses")
-        .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color")
+        .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,minimum_order,estimated_delivery_min,estimated_delivery_max")
         .eq("owner_id", auth.user.id)
         .limit(1)
         .maybeSingle();
@@ -75,7 +100,15 @@ export function AppearancePage() {
         logo_url: data.logo_url || "",
         cover_url: data.cover_url || "",
         primary_color: data.primary_color || "#ff6b00",
-        secondary_color: data.secondary_color || "#18120e"
+        secondary_color: data.secondary_color || "#18120e",
+        is_open: data.is_open !== false,
+        delivery_enabled: data.delivery_enabled !== false,
+        pickup_enabled: data.pickup_enabled !== false,
+        dine_in_enabled: data.dine_in_enabled !== false,
+        delivery_fee: String(data.delivery_fee ?? 0),
+        minimum_order: String(data.minimum_order ?? 0),
+        estimated_delivery_min: data.estimated_delivery_min ? String(data.estimated_delivery_min) : "",
+        estimated_delivery_max: data.estimated_delivery_max ? String(data.estimated_delivery_max) : ""
       });
     };
 
@@ -98,10 +131,18 @@ export function AppearancePage() {
         cover_url: nextForm.cover_url.trim() || null,
         primary_color: nextForm.primary_color,
         secondary_color: nextForm.secondary_color,
+        is_open: nextForm.is_open,
+        delivery_enabled: nextForm.delivery_enabled,
+        pickup_enabled: nextForm.pickup_enabled,
+        dine_in_enabled: nextForm.dine_in_enabled,
+        delivery_fee: Number(nextForm.delivery_fee.replace(",", ".")) || 0,
+        minimum_order: Number(nextForm.minimum_order.replace(",", ".")) || 0,
+        estimated_delivery_min: nextForm.estimated_delivery_min ? Number(nextForm.estimated_delivery_min) : null,
+        estimated_delivery_max: nextForm.estimated_delivery_max ? Number(nextForm.estimated_delivery_max) : null,
         updated_at: new Date().toISOString()
       })
       .eq("id", business.id)
-      .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color")
+      .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,minimum_order,estimated_delivery_min,estimated_delivery_max")
       .single();
 
     if (error) {
@@ -112,7 +153,15 @@ export function AppearancePage() {
         logo_url: data.logo_url || "",
         cover_url: data.cover_url || "",
         primary_color: data.primary_color || "#ff6b00",
-        secondary_color: data.secondary_color || "#18120e"
+        secondary_color: data.secondary_color || "#18120e",
+        is_open: data.is_open !== false,
+        delivery_enabled: data.delivery_enabled !== false,
+        pickup_enabled: data.pickup_enabled !== false,
+        dine_in_enabled: data.dine_in_enabled !== false,
+        delivery_fee: String(data.delivery_fee ?? 0),
+        minimum_order: String(data.minimum_order ?? 0),
+        estimated_delivery_min: data.estimated_delivery_min ? String(data.estimated_delivery_min) : "",
+        estimated_delivery_max: data.estimated_delivery_max ? String(data.estimated_delivery_max) : ""
       });
       setMessage(successMessage);
     }

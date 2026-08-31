@@ -21,7 +21,12 @@ export function ProductsPage() {
     description: "",
     price: "",
     image_url: "",
-    category_id: ""
+    category_id: "",
+    promotional_price: "",
+    badge: "",
+    preparation_time: "",
+    is_featured: false,
+    is_sold_out: false
   });
 
   useEffect(() => {
@@ -82,9 +87,15 @@ export function ProductsPage() {
         name: form.name.trim(),
         description: form.description.trim() || null,
         price: numericPrice,
+        promotional_price: form.promotional_price
+          ? Number(form.promotional_price.replace(",", "."))
+          : null,
         image_url: form.image_url.trim() || null,
+        badge: form.badge.trim() || null,
+        preparation_time: form.preparation_time ? Number(form.preparation_time) : null,
         is_active: true,
-        is_featured: false,
+        is_featured: form.is_featured,
+        is_sold_out: form.is_sold_out,
         sort_order: products.length + 1
       })
       .select("*")
@@ -99,7 +110,12 @@ export function ProductsPage() {
         description: "",
         price: "",
         image_url: "",
-        category_id: form.category_id
+        category_id: form.category_id,
+        promotional_price: "",
+        badge: "",
+        preparation_time: "",
+        is_featured: false,
+        is_sold_out: false
       });
     }
 
@@ -118,6 +134,22 @@ export function ProductsPage() {
 
     if (error) setMessage(error.message);
     else setProducts((current) => current.map((p) => p.id === product.id ? data as Product : p));
+  };
+
+  const toggleSoldOut = async (product: Product) => {
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from("products")
+      .update({ is_sold_out: !product.is_sold_out })
+      .eq("id", product.id)
+      .select("*")
+      .single();
+
+    if (error) setMessage(error.message);
+    else setProducts((current) =>
+      current.map((p) => p.id === product.id ? data as Product : p)
+    );
   };
 
   const remove = async (id: string) => {
@@ -176,6 +208,56 @@ export function ProductsPage() {
           </label>
 
           <label>
+            Preço promocional
+            <input
+              inputMode="decimal"
+              value={form.promotional_price}
+              onChange={(e) => setForm({ ...form, promotional_price: e.target.value })}
+              placeholder="24,90"
+            />
+          </label>
+
+          <label>
+            Selo / destaque
+            <input
+              value={form.badge}
+              onChange={(e) => setForm({ ...form, badge: e.target.value })}
+              placeholder="Mais pedido, Novo, Combo..."
+              maxLength={30}
+            />
+          </label>
+
+          <label>
+            Tempo de preparo (min)
+            <input
+              type="number"
+              min="0"
+              max="999"
+              value={form.preparation_time}
+              onChange={(e) => setForm({ ...form, preparation_time: e.target.value })}
+              placeholder="20"
+            />
+          </label>
+
+          <label className="product-admin-checkbox">
+            <input
+              type="checkbox"
+              checked={form.is_featured}
+              onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+            />
+            <span>Produto em destaque</span>
+          </label>
+
+          <label className="product-admin-checkbox">
+            <input
+              type="checkbox"
+              checked={form.is_sold_out}
+              onChange={(e) => setForm({ ...form, is_sold_out: e.target.checked })}
+            />
+            <span>Marcar como esgotado</span>
+          </label>
+
+          <label>
             URL da imagem
             <input
               value={form.image_url}
@@ -210,13 +292,24 @@ export function ProductsPage() {
                 {product.image_url ? <img src={product.image_url} alt="" /> : <div className="product-admin-placeholder">🍽️</div>}
                 <div>
                   <strong>{product.name}</strong>
-                  <small>{categoryMap.get(product.category_id) || "Sem categoria"} • {formatBRL(Number(product.price))}</small>
+                  <small>
+                    {categoryMap.get(product.category_id) || "Sem categoria"} •{" "}
+                    {formatBRL(Number(product.promotional_price ?? product.price))}
+                  </small>
+                  <div className="product-admin-badges">
+                    {product.is_featured && <span>Destaque</span>}
+                    {product.badge && <span>{product.badge}</span>}
+                    {product.is_sold_out && <span className="sold-out">Esgotado</span>}
+                  </div>
                 </div>
               </div>
 
               <div className="admin-actions">
                 <button className="button button-outline" onClick={() => toggle(product)}>
                   {product.is_active ? "Ocultar" : "Ativar"}
+                </button>
+                <button className="button button-outline" onClick={() => toggleSoldOut(product)}>
+                  {product.is_sold_out ? "Disponibilizar" : "Esgotado"}
                 </button>
                 <button className="danger-text-button" onClick={() => remove(product.id)}>
                   <Trash2 size={17} />

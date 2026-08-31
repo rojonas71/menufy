@@ -17,6 +17,9 @@ export type Product = {
   image_url: string | null;
   is_active: boolean;
   is_featured: boolean;
+  is_sold_out?: boolean;
+  badge?: string | null;
+  preparation_time?: number | null;
   sort_order: number;
 };
 
@@ -35,6 +38,14 @@ export type Business = {
   primary_color?: string | null;
   secondary_color?: string | null;
   is_active: boolean;
+  is_open?: boolean;
+  delivery_enabled?: boolean;
+  pickup_enabled?: boolean;
+  dine_in_enabled?: boolean;
+  delivery_fee?: number;
+  minimum_order?: number;
+  estimated_delivery_min?: number | null;
+  estimated_delivery_max?: number | null;
 };
 
 export type CartItem = {
