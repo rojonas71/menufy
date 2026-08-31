@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import {
+  CheckCircle2,
   ExternalLink,
   ImagePlus,
   Palette,
@@ -61,6 +62,15 @@ const defaultForm: AppearanceForm = {
   estimated_delivery_min: "",
   estimated_delivery_max: ""
 };
+
+const appearancePresets = [
+  { name: "Menufy", primary: "#ff6b00", secondary: "#18120e" },
+  { name: "Premium", primary: "#c78d37", secondary: "#14110e" },
+  { name: "Fresh", primary: "#2e9b63", secondary: "#143328" },
+  { name: "Pizza", primary: "#c73b2f", secondary: "#241613" },
+  { name: "Açaí", primary: "#7a3fa0", secondary: "#24152d" },
+  { name: "Oceano", primary: "#2776c8", secondary: "#10283f" }
+];
 
 export function AppearancePage() {
   const navigate = useNavigate();
