@@ -8,8 +8,7 @@ import {
   ShoppingBag,
   Tag,
   UsersRound,
-  WalletCards,
-  Trash2
+  WalletCards
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DashboardShell } from "../components/DashboardShell";
@@ -109,9 +108,6 @@ export function DevBusinessDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0);
-  const [deleteConfirmName, setDeleteConfirmName] = useState("");
-  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     const client = supabase;
@@ -250,48 +246,6 @@ export function DevBusinessDetailsPage() {
     setSaving(false);
   };
 
-  const deleteBusinessPermanently = async () => {
-    const client = supabase;
-    if (!client || !business) return;
-
-    if (deleteConfirmName.trim() !== business.name.trim()) {
-      setMessage("Digite exatamente o nome do estabelecimento para confirmar.");
-      return;
-    }
-
-    setDeleting(true);
-    setMessage("");
-
-    await client.rpc("write_audit_log", {
-      p_action: "business.deleted_by_admin",
-      p_entity_type: "business",
-      p_entity_id: business.id,
-      p_business_id: null,
-      p_metadata: {
-        business_id: business.id,
-        business_name: business.name,
-        slug: business.slug
-      }
-    });
-
-    const { error } = await client
-      .from("businesses")
-      .delete()
-      .eq("id", business.id);
-
-    if (error) {
-      setMessage(
-        error.message.toLowerCase().includes("foreign key")
-          ? "A exclusão foi bloqueada porque existem dados vinculados. Desative o estabelecimento ou trate os dados relacionados antes de excluir."
-          : error.message
-      );
-      setDeleting(false);
-      return;
-    }
-
-    navigate("/dev", { replace: true });
-  };
-
   if (loading) {
     return <main className="empty-state"><h2>Carregando estabelecimento...</h2></main>;
   }
@@ -423,73 +377,6 @@ export function DevBusinessDetailsPage() {
           </section>
         </aside>
       </div>
-      <section className="dashboard-panel danger-zone-panel">
-        <div className="danger-zone-heading">
-          <div>
-            <span className="eyebrow danger-eyebrow">Zona de perigo</span>
-            <h2>Excluir estabelecimento</h2>
-            <p>
-              A exclusão é permanente. Use esta ação somente quando tiver certeza
-              de que o estabelecimento deve ser removido da plataforma.
-            </p>
-          </div>
-          <Trash2 size={24} />
-        </div>
-
-        {deleteStep === 0 && (
-          <button type="button" className="button danger-button" onClick={() => setDeleteStep(1)}>
-            <Trash2 size={17} />
-            Excluir estabelecimento
-          </button>
-        )}
-
-        {deleteStep === 1 && (
-          <div className="delete-confirm-box">
-            <strong>Tem certeza que deseja continuar?</strong>
-            <p>
-              Você está prestes a excluir <b>{business.name}</b>.
-              Essa ação não pode ser desfeita.
-            </p>
-            <div className="delete-confirm-actions">
-              <button type="button" className="button button-outline" onClick={() => setDeleteStep(0)}>Cancelar</button>
-              <button type="button" className="button danger-button" onClick={() => setDeleteStep(2)}>Continuar</button>
-            </div>
-          </div>
-        )}
-
-        {deleteStep === 2 && (
-          <div className="delete-confirm-box final">
-            <strong>Confirmação final</strong>
-            <p>Digite exatamente o nome abaixo para liberar a exclusão:</p>
-            <code>{business.name}</code>
-            <input
-              value={deleteConfirmName}
-              onChange={(event) => setDeleteConfirmName(event.target.value)}
-              placeholder="Digite o nome do estabelecimento"
-              autoComplete="off"
-            />
-            <div className="delete-confirm-actions">
-              <button
-                type="button"
-                className="button button-outline"
-                disabled={deleting}
-                onClick={() => { setDeleteStep(0); setDeleteConfirmName(""); }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="button danger-button"
-                disabled={deleting || deleteConfirmName.trim() !== business.name.trim()}
-                onClick={deleteBusinessPermanently}
-              >
-                <Trash2 size={17} />
-                {deleting ? "Excluindo..." : "Excluir permanentemente"}
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
     </DashboardShell>
   );
 }

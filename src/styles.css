@@ -2400,5 +2400,166 @@ button { cursor: pointer; }
 @media(max-width:760px){.business-advanced-filters,.global-business-grid,.business-detail-side{grid-template-columns:1fr}.business-search-wide{grid-column:auto}.business-pro-card .dev-business-actions{grid-template-columns:1fr}.business-recent-orders article{grid-template-columns:1fr auto}.business-recent-orders article>strong,.business-recent-orders article>small{grid-column:1/-1}.business-details-header .dashboard-header-actions{width:100%;display:grid}.business-details-header .dashboard-header-actions .button{width:100%;justify-content:center}}
 
 
-/* Delete Business 2.3.1 */
-.danger-zone-panel{margin-top:22px;border-color:#efc9c4;background:#fffafa}.danger-zone-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}.danger-zone-heading h2{margin:6px 0 7px;color:#8f2f28}.danger-zone-heading p{max-width:700px;margin:0;color:#81645f;line-height:1.55}.danger-zone-heading>svg,.danger-eyebrow{color:#b8483e}.danger-button{background:#b63f36;color:#fff;border-color:#b63f36}.danger-button:hover{background:#9f342d;border-color:#9f342d}.danger-button:disabled{opacity:.45;cursor:not-allowed}.delete-confirm-box{padding:16px;border:1px solid #efc9c4;border-radius:14px;background:#fff}.delete-confirm-box strong{display:block;color:#8f2f28;font-size:16px}.delete-confirm-box p{margin:7px 0 14px;color:#75615d;line-height:1.55}.delete-confirm-box code{display:block;width:fit-content;margin-bottom:12px;padding:7px 9px;border-radius:8px;background:#f8ecea;color:#8f2f28;font-weight:800}.delete-confirm-box input{width:100%;max-width:520px;min-height:44px;padding:0 12px;border:1px solid #dfb4ae;border-radius:11px;background:#fff}.delete-confirm-actions{margin-top:14px;display:flex;gap:9px;flex-wrap:wrap}@media(max-width:600px){.danger-zone-heading{flex-direction:column}.delete-confirm-actions{flex-direction:column}.delete-confirm-actions .button{width:100%;justify-content:center}}
+/* Delete Platform User 2.4 */
+.global-user-card {
+  position: relative;
+}
+
+.global-user-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.user-delete-button {
+  min-height: 38px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #edc8c3;
+  border-radius: 10px;
+  background: #fff8f7;
+  color: #a43b33;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.user-delete-button:hover {
+  background: #fff0ee;
+}
+
+.current-user-badge {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #edf8f1;
+  color: #247048;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.delete-user-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 18, 14, .58);
+  backdrop-filter: blur(4px);
+}
+
+.delete-user-modal {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #efc8c3;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 24px 80px rgba(38, 20, 14, .28);
+}
+
+.delete-user-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff0ee;
+  color: #a43b33;
+}
+
+.delete-user-modal h2 {
+  margin: 7px 0 10px;
+  color: #712923;
+}
+
+.delete-user-modal > p {
+  margin: 0;
+  color: #70615b;
+  line-height: 1.6;
+}
+
+.delete-user-warning {
+  margin-top: 15px;
+  padding: 12px 13px;
+  border: 1px solid #efd2a6;
+  border-radius: 12px;
+  background: #fff8e9;
+  color: #8a5c19;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.delete-user-confirm {
+  margin-top: 18px;
+}
+
+.delete-user-confirm label {
+  display: grid;
+  gap: 8px;
+  color: #5f5550;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.delete-user-confirm code {
+  width: fit-content;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8efed;
+  color: #8f2f28;
+  font-weight: 850;
+}
+
+.delete-user-confirm input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid #dfb6b0;
+  border-radius: 11px;
+  background: white;
+}
+
+.delete-user-modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1100px) {
+  .global-user-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 650px) {
+  .global-user-actions {
+    grid-column: 1 / -1;
+  }
+
+  .user-delete-button {
+    width: 100%;
+  }
+
+  .delete-user-modal {
+    padding: 19px;
+    border-radius: 17px;
+  }
+
+  .delete-user-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delete-user-modal-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}

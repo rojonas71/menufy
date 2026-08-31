@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Store,
   UsersRound,
+  Trash2,
   WalletCards
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -186,6 +187,11 @@ export function DevAdminPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | OrderStatus>("all");
 
   const [userSearch, setUserSearch] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deleteUserTarget, setDeleteUserTarget] = useState<UserRow | null>(null);
+  const [deleteUserConfirmEmail, setDeleteUserConfirmEmail] = useState("");
+  const [deletingUser, setDeletingUser] = useState(false);
+
 
   const load = async () => {
     const client = supabase;
@@ -205,6 +211,8 @@ export function DevAdminPage() {
       navigate("/login", { replace: true });
       return;
     }
+
+    setCurrentUserId(auth.user.id);
 
     const { data: adminRow, error: adminError } = await client
       .from("dev_admins")
@@ -283,6 +291,55 @@ export function DevAdminPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const deletePlatformUser = async () => {
+    const client = supabase;
+    if (!client || !deleteUserTarget) return;
+
+    const expectedEmail = (deleteUserTarget.email || "").trim().toLowerCase();
+    const typedEmail = deleteUserConfirmEmail.trim().toLowerCase();
+
+    if (!expectedEmail || typedEmail !== expectedEmail) {
+      setMessage("Digite exatamente o email do usuário para confirmar.");
+      return;
+    }
+
+    setDeletingUser(true);
+    setMessage("");
+
+    const { error } = await client.rpc("dev_admin_delete_user", {
+      p_user_id: deleteUserTarget.user_id,
+      p_confirm_email: typedEmail
+    });
+
+    if (error) {
+      const raw = error.message || "";
+      const friendly =
+        raw.includes("não pode excluir a própria conta")
+          ? "Você não pode excluir sua própria conta de Admin Dev."
+          : raw.includes("possui estabelecimento")
+            ? "Este usuário possui um ou mais estabelecimentos. Exclua ou transfira esses estabelecimentos antes de remover a conta."
+            : raw.includes("Email de confirmação")
+              ? "O email digitado não corresponde ao usuário."
+              : raw;
+
+      setMessage(friendly);
+      setDeletingUser(false);
+      return;
+    }
+
+    setUsers((current) =>
+      current.filter((user) => user.user_id !== deleteUserTarget.user_id)
+    );
+
+    setDeleteUserTarget(null);
+    setDeleteUserConfirmEmail("");
+    setDeletingUser(false);
+    setMessage("Usuário excluído com sucesso.");
+
+    const { data: metricData } = await client.rpc("dev_admin_metrics");
+    if (metricData) setMetrics(metricData as Metrics);
+  };
 
   const updateBusiness = async (
     businessId: string,
@@ -1027,6 +1084,25 @@ export function DevAdminPage() {
                     último login
                   </span>
                 </div>
+
+                <div className="global-user-actions">
+                  {currentUserId === user.user_id ? (
+                    <span className="current-user-badge">Sua conta • Admin Dev</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="user-delete-button"
+                      onClick={() => {
+                        setDeleteUserTarget(user);
+                        setDeleteUserConfirmEmail("");
+                        setMessage("");
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      Excluir
+                    </button>
+                  )}
+                </div>
               </article>
             ))}
 
@@ -1036,6 +1112,92 @@ export function DevAdminPage() {
           </div>
         </section>
       )}
+
+      {deleteUserTarget && (
+        <div
+          className="delete-user-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deletingUser) {
+              setDeleteUserTarget(null);
+              setDeleteUserConfirmEmail("");
+            }
+          }}
+        >
+          <section
+            className="delete-user-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-title"
+          >
+            <div className="delete-user-icon">
+              <Trash2 size={24} />
+            </div>
+
+            <span className="eyebrow danger-eyebrow">Ação permanente</span>
+            <h2 id="delete-user-title">Excluir usuário da plataforma?</h2>
+
+            <p>
+              A conta <strong>{deleteUserTarget.email}</strong> será removida do
+              Supabase Auth e não poderá mais entrar no Menufy.
+            </p>
+
+            {deleteUserTarget.business_count > 0 && (
+              <div className="delete-user-warning">
+                Este usuário ainda possui <strong>{deleteUserTarget.business_count}</strong>{" "}
+                estabelecimento(s). A exclusão será bloqueada até que esses negócios
+                sejam excluídos ou transferidos.
+              </div>
+            )}
+
+            <div className="delete-user-confirm">
+              <label>
+                Para confirmar, digite exatamente:
+                <code>{deleteUserTarget.email}</code>
+                <input
+                  type="email"
+                  autoComplete="off"
+                  value={deleteUserConfirmEmail}
+                  onChange={(event) =>
+                    setDeleteUserConfirmEmail(event.target.value)
+                  }
+                  placeholder="Digite o email do usuário"
+                />
+              </label>
+            </div>
+
+            <div className="delete-user-modal-actions">
+              <button
+                type="button"
+                className="button button-outline"
+                disabled={deletingUser}
+                onClick={() => {
+                  setDeleteUserTarget(null);
+                  setDeleteUserConfirmEmail("");
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="button danger-button"
+                disabled={
+                  deletingUser ||
+                  deleteUserTarget.business_count > 0 ||
+                  deleteUserConfirmEmail.trim().toLowerCase() !==
+                    (deleteUserTarget.email || "").trim().toLowerCase()
+                }
+                onClick={deletePlatformUser}
+              >
+                <Trash2 size={17} />
+                {deletingUser ? "Excluindo..." : "Excluir usuário permanentemente"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
     </DashboardShell>
   );
 }
