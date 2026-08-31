@@ -11,10 +11,13 @@ import {
   Star,
   Tags,
   Trash2,
+  Upload,
+  Image as ImageIcon,
   X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DashboardShell } from "../components/DashboardShell";
+import { extractMenufyStoragePath, removeBusinessImage, uploadBusinessImage } from "../lib/storage";
 import { formatBRL } from "../lib/money";
 import { supabase } from "../lib/supabase";
 import type { Category, Product } from "../types";
@@ -60,6 +63,8 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "active" | "hidden" | "soldout" | "featured">("all");
   const [editing, setEditing] = useState<Product | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedImagePath, setUploadedImagePath] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
 
   const load = async () => {
@@ -131,6 +136,7 @@ export function ProductsPage() {
       category_id: categories[0]?.id || ""
     });
     setEditing(null);
+    setUploadedImagePath(null);
   };
 
   const validateForm = () => {
@@ -145,6 +151,56 @@ export function ProductsPage() {
     if (promo !== null && (!Number.isFinite(promo) || promo < 0)) return "Preço promocional inválido.";
     if (promo !== null && promo >= numericPrice) return "O preço promocional deve ser menor que o preço normal.";
     return "";
+  };
+
+  const handleProductImageUpload = async (file?: File) => {
+    if (!file || !business) return;
+
+    setUploadingImage(true);
+    setMessage("");
+
+    try {
+      if (uploadedImagePath) {
+        try {
+          await removeBusinessImage(uploadedImagePath);
+        } catch {
+          // Se a imagem antiga já não existir, seguimos com o novo upload.
+        }
+      }
+
+      const uploaded = await uploadBusinessImage({
+        file,
+        businessId: business.id,
+        folder: "products"
+      });
+
+      setUploadedImagePath(uploaded.path);
+      setForm((current) => ({ ...current, image_url: uploaded.publicUrl }));
+      setMessage("Imagem enviada com sucesso.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeProductImage = async () => {
+    setUploadingImage(true);
+    setMessage("");
+
+    try {
+      if (uploadedImagePath) {
+        await removeBusinessImage(uploadedImagePath);
+      }
+
+      setUploadedImagePath(null);
+      setForm((current) => ({ ...current, image_url: "" }));
+      setMessage("Imagem removida.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível remover a imagem.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const saveProduct = async (event: FormEvent) => {
@@ -209,6 +265,7 @@ export function ProductsPage() {
 
   const openEdit = (product: Product) => {
     setEditing(product);
+    setUploadedImagePath(extractMenufyStoragePath(product.image_url));
     setForm({
       name: product.name,
       description: product.description || "",
@@ -372,14 +429,66 @@ export function ProductsPage() {
             </div>
           </label>
 
-          <label className="full">
-            URL da imagem
-            <input
-              value={form.image_url}
-              onChange={(event) => setForm({ ...form, image_url: event.target.value })}
-              placeholder="https://..."
-            />
-          </label>
+          <div className="full image-upload-field">
+            <div className="image-upload-label">
+              <span>Imagem do produto</span>
+              <small>JPG, PNG, WEBP • até 5 MB</small>
+            </div>
+
+            <div className="image-upload-layout">
+              <div className="image-upload-preview">
+                {form.image_url ? (
+                  <img src={form.image_url} alt="Prévia do produto" />
+                ) : (
+                  <span>
+                    <ImageIcon size={26} />
+                    Sem imagem
+                  </span>
+                )}
+              </div>
+
+              <div className="image-upload-actions">
+                <label className="button button-outline image-upload-button">
+                  <Upload size={17} />
+                  {uploadingImage ? "Enviando..." : form.image_url ? "Trocar imagem" : "Enviar imagem"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    disabled={uploadingImage}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      handleProductImageUpload(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {form.image_url && (
+                  <button
+                    type="button"
+                    className="button button-outline"
+                    disabled={uploadingImage}
+                    onClick={removeProductImage}
+                  >
+                    <Trash2 size={16} />
+                    Remover imagem
+                  </button>
+                )}
+
+                <label className="image-url-fallback">
+                  Ou use uma URL
+                  <input
+                    value={form.image_url}
+                    onChange={(event) => {
+                      setUploadedImagePath(extractMenufyStoragePath(event.target.value));
+                      setForm({ ...form, image_url: event.target.value });
+                    }}
+                    placeholder="https://..."
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
 
           <label className="full">
             Descrição

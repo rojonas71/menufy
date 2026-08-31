@@ -6,8 +6,9 @@ import {
   Palette,
   Save,
   Store,
-  Trash2,
-  Upload
+  Upload,
+  Image as ImageIcon,
+  Trash2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { DashboardShell } from "../components/DashboardShell";
