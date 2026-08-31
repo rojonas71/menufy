@@ -43,6 +43,7 @@ export type Business = {
   pickup_enabled?: boolean;
   dine_in_enabled?: boolean;
   delivery_fee?: number;
+  free_delivery_above?: number | null;
   minimum_order?: number;
   estimated_delivery_min?: number | null;
   estimated_delivery_max?: number | null;

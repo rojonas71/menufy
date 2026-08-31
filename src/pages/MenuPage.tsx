@@ -239,6 +239,7 @@ export function MenuPage() {
   const pickupEnabled = business.pickup_enabled !== false;
   const dineInEnabled = business.dine_in_enabled !== false;
   const deliveryFee = Number(business.delivery_fee || 0);
+  const freeDeliveryAbove = Number(business.free_delivery_above || 0);
   const minimumOrder = Number(business.minimum_order || 0);
 
   return (
@@ -345,6 +346,13 @@ export function MenuPage() {
             <strong>{minimumOrder > 0 ? formatBRL(minimumOrder) : "Sem mínimo"}</strong>
           </article>
         </section>
+
+        {deliveryEnabled && freeDeliveryAbove > 0 && (
+          <div className="menu-free-delivery-note">
+            🚚 <strong>Entrega grátis</strong> em pedidos a partir de{" "}
+            <strong>{formatBRL(freeDeliveryAbove)}</strong>.
+          </div>
+        )}
 
         {!isOpen && (
           <div className="menu-closed-alert">

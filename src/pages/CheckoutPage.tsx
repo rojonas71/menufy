@@ -74,11 +74,16 @@ export function CheckoutPage() {
     loadBusiness();
   }, [slug]);
 
-  const deliveryFee =
+  const baseDeliveryFee =
     form.order_type === "delivery" ? Number(business?.delivery_fee || 0) : 0;
+  const freeDeliveryAbove = Number(business?.free_delivery_above || 0);
+  const hasFreeDelivery =
+    form.order_type === "delivery" && freeDeliveryAbove > 0 && subtotal >= freeDeliveryAbove;
+  const deliveryFee = hasFreeDelivery ? 0 : baseDeliveryFee;
   const minimumOrder = Number(business?.minimum_order || 0);
   const total = subtotal + deliveryFee;
   const minimumRemaining = Math.max(0, minimumOrder - subtotal);
+  const freeDeliveryRemaining = Math.max(0, freeDeliveryAbove - subtotal);
   const canOrder = business?.is_open !== false && minimumRemaining <= 0;
 
   const orderTypeOptions = useMemo(
@@ -476,6 +481,18 @@ export function CheckoutPage() {
             <span>Total</span>
             <strong>{formatBRL(total)}</strong>
           </div>
+
+          {form.order_type === "delivery" && freeDeliveryAbove > 0 && (
+            <div className={`checkout-free-delivery-progress ${hasFreeDelivery ? "unlocked" : ""}`}>
+              <div>
+                <span>{hasFreeDelivery ? "🎉 Frete grátis liberado" : "🚚 Frete grátis"}</span>
+                <strong>{hasFreeDelivery ? "Sua entrega não terá taxa." : `Faltam ${formatBRL(freeDeliveryRemaining)} para entrega grátis.`}</strong>
+              </div>
+              <div className="checkout-free-delivery-bar">
+                <span style={{ width: `${Math.min(100, Math.max(0, (subtotal / freeDeliveryAbove) * 100))}%` }} />
+              </div>
+            </div>
+          )}
 
           {minimumRemaining > 0 && (
             <div className="checkout-minimum-alert">

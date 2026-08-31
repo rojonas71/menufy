@@ -29,6 +29,7 @@ type BusinessAppearance = {
   pickup_enabled?: boolean;
   dine_in_enabled?: boolean;
   delivery_fee?: number;
+  free_delivery_above?: number | null;
   minimum_order?: number;
   estimated_delivery_min?: number | null;
   estimated_delivery_max?: number | null;
@@ -44,6 +45,7 @@ type AppearanceForm = {
   pickup_enabled: boolean;
   dine_in_enabled: boolean;
   delivery_fee: string;
+  free_delivery_above: string;
   minimum_order: string;
   estimated_delivery_min: string;
   estimated_delivery_max: string;
@@ -59,6 +61,7 @@ const defaultForm: AppearanceForm = {
   pickup_enabled: true,
   dine_in_enabled: true,
   delivery_fee: "0",
+  free_delivery_above: "",
   minimum_order: "0",
   estimated_delivery_min: "",
   estimated_delivery_max: ""
@@ -94,7 +97,7 @@ export function AppearancePage() {
 
       const { data, error } = await supabase
         .from("businesses")
-        .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,minimum_order,estimated_delivery_min,estimated_delivery_max")
+        .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,free_delivery_above,minimum_order,estimated_delivery_min,estimated_delivery_max")
         .eq("owner_id", auth.user.id)
         .limit(1)
         .maybeSingle();
@@ -117,6 +120,7 @@ export function AppearancePage() {
         pickup_enabled: data.pickup_enabled !== false,
         dine_in_enabled: data.dine_in_enabled !== false,
         delivery_fee: String(data.delivery_fee ?? 0),
+        free_delivery_above: data.free_delivery_above ? String(data.free_delivery_above) : "",
         minimum_order: String(data.minimum_order ?? 0),
         estimated_delivery_min: data.estimated_delivery_min ? String(data.estimated_delivery_min) : "",
         estimated_delivery_max: data.estimated_delivery_max ? String(data.estimated_delivery_max) : ""
@@ -147,13 +151,14 @@ export function AppearancePage() {
         pickup_enabled: nextForm.pickup_enabled,
         dine_in_enabled: nextForm.dine_in_enabled,
         delivery_fee: Number(nextForm.delivery_fee.replace(",", ".")) || 0,
+        free_delivery_above: nextForm.free_delivery_above ? Number(nextForm.free_delivery_above.replace(",", ".")) : null,
         minimum_order: Number(nextForm.minimum_order.replace(",", ".")) || 0,
         estimated_delivery_min: nextForm.estimated_delivery_min ? Number(nextForm.estimated_delivery_min) : null,
         estimated_delivery_max: nextForm.estimated_delivery_max ? Number(nextForm.estimated_delivery_max) : null,
         updated_at: new Date().toISOString()
       })
       .eq("id", business.id)
-      .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,minimum_order,estimated_delivery_min,estimated_delivery_max")
+      .select("id,name,slug,description,logo_url,cover_url,primary_color,secondary_color,is_open,delivery_enabled,pickup_enabled,dine_in_enabled,delivery_fee,free_delivery_above,minimum_order,estimated_delivery_min,estimated_delivery_max")
       .single();
 
     if (error) {
@@ -170,6 +175,7 @@ export function AppearancePage() {
         pickup_enabled: data.pickup_enabled !== false,
         dine_in_enabled: data.dine_in_enabled !== false,
         delivery_fee: String(data.delivery_fee ?? 0),
+        free_delivery_above: data.free_delivery_above ? String(data.free_delivery_above) : "",
         minimum_order: String(data.minimum_order ?? 0),
         estimated_delivery_min: data.estimated_delivery_min ? String(data.estimated_delivery_min) : "",
         estimated_delivery_max: data.estimated_delivery_max ? String(data.estimated_delivery_max) : ""

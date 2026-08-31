@@ -7491,3 +7491,7 @@ button { cursor: pointer; }
     justify-content: center;
   }
 }
+
+
+/* Taxa de entrega Pro 3.1 */
+.field-hint{margin-top:4px;display:block;color:#9b9088;font-size:7px;line-height:1.4}.menu-free-delivery-note{margin-top:10px;padding:10px 12px;border:1px solid #d8eadf;border-radius:11px;background:#f2fbf5;color:#3b7552;font-size:9px;line-height:1.5}.menu-free-delivery-note strong{color:#286844}.checkout-free-delivery-progress{margin:10px 0 13px;padding:11px;border:1px solid #dde6df;border-radius:11px;background:#f7faf8}.checkout-free-delivery-progress.unlocked{border-color:#c8e8d4;background:#eefaf2}.checkout-free-delivery-progress>div:first-child span,.checkout-free-delivery-progress>div:first-child strong{display:block}.checkout-free-delivery-progress>div:first-child span{color:#5e6d63;font-size:8px;font-weight:900}.checkout-free-delivery-progress>div:first-child strong{margin-top:3px;color:#3f5f4a;font-size:8px;line-height:1.45}.checkout-free-delivery-bar{height:6px;margin-top:9px;overflow:hidden;border-radius:999px;background:#dfe8e2}.checkout-free-delivery-bar>span{height:100%;display:block;border-radius:inherit;background:#36a867}
