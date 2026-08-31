@@ -413,6 +413,141 @@ export function AppearancePage() {
                 </div>
               </label>
 
+              <div className="full menu-operation-admin">
+                <div className="appearance-section-title">
+                  <Store size={18} />
+                  Operação e entrega
+                </div>
+
+                <p className="appearance-helper">
+                  Configure quando receber pedidos, formas de atendimento e valores da entrega.
+                </p>
+
+                <div className="menu-operation-toggle-grid">
+                  <label className="menu-operation-toggle">
+                    <input
+                      type="checkbox"
+                      checked={form.is_open}
+                      onChange={(event) =>
+                        setForm({ ...form, is_open: event.target.checked })
+                      }
+                    />
+                    <span>
+                      <strong>Receber pedidos</strong>
+                      <small>Desative para mostrar o estabelecimento como fechado.</small>
+                    </span>
+                  </label>
+
+                  <label className="menu-operation-toggle">
+                    <input
+                      type="checkbox"
+                      checked={form.delivery_enabled}
+                      onChange={(event) =>
+                        setForm({ ...form, delivery_enabled: event.target.checked })
+                      }
+                    />
+                    <span>
+                      <strong>Entrega</strong>
+                      <small>Permitir pedidos para delivery.</small>
+                    </span>
+                  </label>
+
+                  <label className="menu-operation-toggle">
+                    <input
+                      type="checkbox"
+                      checked={form.pickup_enabled}
+                      onChange={(event) =>
+                        setForm({ ...form, pickup_enabled: event.target.checked })
+                      }
+                    />
+                    <span>
+                      <strong>Retirada</strong>
+                      <small>Permitir retirada no estabelecimento.</small>
+                    </span>
+                  </label>
+
+                  <label className="menu-operation-toggle">
+                    <input
+                      type="checkbox"
+                      checked={form.dine_in_enabled}
+                      onChange={(event) =>
+                        setForm({ ...form, dine_in_enabled: event.target.checked })
+                      }
+                    />
+                    <span>
+                      <strong>Consumir no local</strong>
+                      <small>Mostrar opção de atendimento presencial.</small>
+                    </span>
+                  </label>
+                </div>
+
+                <div className="form-grid menu-operation-values">
+                  <label>
+                    Taxa de entrega
+                    <input
+                      inputMode="decimal"
+                      value={form.delivery_fee}
+                      onChange={(event) =>
+                        setForm({ ...form, delivery_fee: event.target.value })
+                      }
+                      placeholder="6,00"
+                    />
+                    <small className="field-hint">Use 0 para entrega grátis.</small>
+                  </label>
+
+                  <label>
+                    Entrega grátis acima de
+                    <input
+                      inputMode="decimal"
+                      value={form.free_delivery_above}
+                      onChange={(event) =>
+                        setForm({ ...form, free_delivery_above: event.target.value })
+                      }
+                      placeholder="80,00"
+                    />
+                    <small className="field-hint">Deixe vazio para desativar essa regra.</small>
+                  </label>
+
+                  <label>
+                    Pedido mínimo
+                    <input
+                      inputMode="decimal"
+                      value={form.minimum_order}
+                      onChange={(event) =>
+                        setForm({ ...form, minimum_order: event.target.value })
+                      }
+                      placeholder="20,00"
+                    />
+                  </label>
+
+                  <label>
+                    Entrega mínima (min)
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.estimated_delivery_min}
+                      onChange={(event) =>
+                        setForm({ ...form, estimated_delivery_min: event.target.value })
+                      }
+                      placeholder="30"
+                    />
+                  </label>
+
+                  <label>
+                    Entrega máxima (min)
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.estimated_delivery_max}
+                      onChange={(event) =>
+                        setForm({ ...form, estimated_delivery_max: event.target.value })
+                      }
+                      placeholder="50"
+                    />
+                  </label>
+                </div>
+              </div>
+
               {message && <div className="form-message">{message}</div>}
 
               <button className="button button-large full" disabled={saving}>
