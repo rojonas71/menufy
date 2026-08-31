@@ -1,4 +1,4 @@
--- Menufy 2.3.1 - Exclusão administrativa de estabelecimento
+-- Menufy 2.5 - Exclusão segura de estabelecimentos pelo Admin Dev
 
 drop policy if exists "dev_admin_delete_businesses" on public.businesses;
 create policy "dev_admin_delete_businesses"

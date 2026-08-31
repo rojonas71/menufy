@@ -67,12 +67,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     }
   ], []);
 
-  const active = (path: string) => location.pathname === path;
+  const active = (path: string) => location.pathname === path || (path === "/dev" && location.pathname.startsWith("/dev/estabelecimentos/"));
 
   const currentPage =
     location.pathname === "/dev" ? "Admin Dev" :
     location.pathname === "/dev/configuracoes" ? "Configurações" :
     location.pathname === "/dev/auditoria" ? "Auditoria" :
+    location.pathname.startsWith("/dev/estabelecimentos/") ? "Estabelecimento" :
     navItems.find((item) => active(item.to))?.label || "Painel";
 
 
