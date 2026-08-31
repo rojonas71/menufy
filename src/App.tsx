@@ -6,6 +6,7 @@ import { CategoriesPage } from "./pages/CategoriesPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DevAdminPage } from "./pages/DevAdminPage";
+import { DevBusinessDetailsPage } from "./pages/DevBusinessDetailsPage";
 import { LandingPage } from "./pages/LandingPage";
 import { RootPage } from "./pages/RootPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/dashboard/qrcode" element={<QrCodePage />} />
 
             <Route path="/dev" element={<DevAdminPage />} />
+            <Route path="/dev/estabelecimentos/:id" element={<DevBusinessDetailsPage />} />
             <Route path="/dev/configuracoes" element={<DevSettingsPage />} />
             <Route path="/dev/auditoria" element={<DevAuditPage />} />
 

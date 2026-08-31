@@ -5,6 +5,9 @@ import {
   CheckCircle2,
   Download,
   ExternalLink,
+  ChevronRight,
+  MapPin,
+  Phone,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -35,6 +38,7 @@ type BusinessRow = {
   plan: Plan;
   subscription_status: SubscriptionStatus;
   created_at: string;
+  updated_at?: string | null;
 };
 
 type OrderRow = {
@@ -175,6 +179,8 @@ export function DevAdminPage() {
   const [businessSearch, setBusinessSearch] = useState("");
   const [businessPlanFilter, setBusinessPlanFilter] = useState<"all" | Plan>("all");
   const [businessStatusFilter, setBusinessStatusFilter] = useState<"all" | SubscriptionStatus>("all");
+  const [businessActiveFilter, setBusinessActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [businessSort, setBusinessSort] = useState<"newest" | "name" | "orders" | "revenue">("newest");
 
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | OrderStatus>("all");
@@ -232,7 +238,7 @@ export function DevAdminPage() {
       client
         .from("businesses")
         .select(
-          "id,owner_id,name,slug,whatsapp,city,state,is_active,plan,subscription_status,created_at"
+          "id,owner_id,name,slug,whatsapp,city,state,is_active,plan,subscription_status,created_at,updated_at"
         )
         .order("created_at", { ascending: false }),
 
@@ -298,7 +304,7 @@ export function DevAdminPage() {
       })
       .eq("id", businessId)
       .select(
-        "id,owner_id,name,slug,whatsapp,city,state,is_active,plan,subscription_status,created_at"
+        "id,owner_id,name,slug,whatsapp,city,state,is_active,plan,subscription_status,created_at,updated_at"
       )
       .single();
 
@@ -351,7 +357,8 @@ export function DevAdminPage() {
   const filteredBusinesses = useMemo(() => {
     const term = businessSearch.trim().toLowerCase();
 
-    return businesses.filter((business) => {
+    const filtered = businesses.filter((business) => {
+      const ownerEmail = users.find((user) => user.user_id === business.owner_id)?.email || "";
       const matchesText =
         !term ||
         [
@@ -359,7 +366,8 @@ export function DevAdminPage() {
           business.slug,
           business.whatsapp,
           business.city || "",
-          business.state || ""
+          business.state || "",
+          ownerEmail
         ]
           .join(" ")
           .toLowerCase()
@@ -372,13 +380,37 @@ export function DevAdminPage() {
         businessStatusFilter === "all" ||
         business.subscription_status === businessStatusFilter;
 
-      return matchesText && matchesPlan && matchesStatus;
+      const matchesActive =
+        businessActiveFilter === "all" ||
+        (businessActiveFilter === "active" ? business.is_active : !business.is_active);
+
+      return matchesText && matchesPlan && matchesStatus && matchesActive;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (businessSort === "name") return a.name.localeCompare(b.name, "pt-BR");
+
+      const ordersA = orders.filter((order) => order.business_id === a.id);
+      const ordersB = orders.filter((order) => order.business_id === b.id);
+
+      if (businessSort === "orders") return ordersB.length - ordersA.length;
+      if (businessSort === "revenue") {
+        const revenueA = ordersA.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + Number(order.total), 0);
+        const revenueB = ordersB.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + Number(order.total), 0);
+        return revenueB - revenueA;
+      }
+
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [
     businesses,
+    users,
+    orders,
     businessSearch,
     businessPlanFilter,
-    businessStatusFilter
+    businessStatusFilter,
+    businessActiveFilter,
+    businessSort
   ]);
 
   const filteredOrders = useMemo(() => {
@@ -661,8 +693,11 @@ export function DevAdminPage() {
                     cidade: business.city || "",
                     estado: business.state || "",
                     plano: planLabel[business.plan],
+                    proprietario: users.find((user) => user.user_id === business.owner_id)?.email || "",
                     assinatura: subscriptionLabel[business.subscription_status],
                     ativo: business.is_active ? "Sim" : "Não",
+                    pedidos: orders.filter((order) => order.business_id === business.id).length,
+                    volume: orders.filter((order) => order.business_id === business.id && order.status !== "cancelled").reduce((sum, order) => sum + Number(order.total), 0).toFixed(2),
                     criado_em: dateBR(business.created_at)
                   }))
                 )
@@ -672,47 +707,41 @@ export function DevAdminPage() {
             </button>
           </div>
 
-          <div className="global-filter-row">
-            <label className="dev-search">
+          <div className="business-advanced-filters">
+            <label className="dev-search business-search-wide">
               <Search size={17} />
               <input
                 value={businessSearch}
                 onChange={(event) => setBusinessSearch(event.target.value)}
-                placeholder="Buscar nome, slug, cidade ou WhatsApp..."
+                placeholder="Buscar estabelecimento, proprietário, slug, cidade ou WhatsApp..."
               />
             </label>
 
-            <select
-              value={businessPlanFilter}
-              onChange={(event) =>
-                setBusinessPlanFilter(event.target.value as "all" | Plan)
-              }
-            >
-              <option value="all">Todos os planos</option>
-              <option value="starter">Starter</option>
-              <option value="pro">Pro</option>
-              <option value="premium">Premium</option>
+            <select value={businessPlanFilter} onChange={(event) => setBusinessPlanFilter(event.target.value as "all" | Plan)}>
+              <option value="all">Todos os planos</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="premium">Premium</option>
             </select>
 
-            <select
-              value={businessStatusFilter}
-              onChange={(event) =>
-                setBusinessStatusFilter(
-                  event.target.value as "all" | SubscriptionStatus
-                )
-              }
-            >
-              <option value="all">Todas assinaturas</option>
-              <option value="active">Ativa</option>
-              <option value="trial">Teste</option>
-              <option value="past_due">Pendente</option>
-              <option value="cancelled">Cancelada</option>
+            <select value={businessStatusFilter} onChange={(event) => setBusinessStatusFilter(event.target.value as "all" | SubscriptionStatus)}>
+              <option value="all">Todas assinaturas</option><option value="active">Ativa</option><option value="trial">Teste</option><option value="past_due">Pendente</option><option value="cancelled">Cancelada</option>
+            </select>
+
+            <select value={businessActiveFilter} onChange={(event) => setBusinessActiveFilter(event.target.value as "all" | "active" | "inactive")}>
+              <option value="all">Online e offline</option><option value="active">Somente online</option><option value="inactive">Somente offline</option>
+            </select>
+
+            <select value={businessSort} onChange={(event) => setBusinessSort(event.target.value as "newest" | "name" | "orders" | "revenue")}>
+              <option value="newest">Mais recentes</option><option value="name">Nome A–Z</option><option value="orders">Mais pedidos</option><option value="revenue">Maior volume</option>
             </select>
           </div>
 
           <div className="dev-business-grid global-business-grid">
-            {filteredBusinesses.map((business) => (
-              <article className="dev-business-card" key={business.id}>
+            {filteredBusinesses.map((business) => {
+              const businessOrders = orders.filter((order) => order.business_id === business.id);
+              const businessRevenue = businessOrders.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + Number(order.total), 0);
+              const owner = users.find((user) => user.user_id === business.owner_id);
+
+              return (
+              <article className="dev-business-card business-pro-card" key={business.id}>
                 <div className="dev-business-card-head">
                   <div>
                     <strong>{business.name}</strong>
@@ -727,10 +756,21 @@ export function DevAdminPage() {
                   </span>
                 </div>
 
-                <div className="dev-business-meta">
+                <div className="dev-business-meta business-pro-meta">
+                  <span><MapPin size={13} /> {business.city || "Cidade não informada"}{business.state ? `/${business.state}` : ""}</span>
+                  <span><Phone size={13} /> {business.whatsapp}</span>
                   <span>/{business.slug}</span>
-                  <span>{business.whatsapp}</span>
-                  <span>Criado em {dateBR(business.created_at)}</span>
+                </div>
+
+                <div className="business-owner-line">
+                  <span>Proprietário</span>
+                  <strong>{owner?.email || "Não identificado"}</strong>
+                </div>
+
+                <div className="business-mini-stats">
+                  <article><span>Pedidos</span><strong>{businessOrders.length}</strong></article>
+                  <article><span>Volume</span><strong>{formatBRL(businessRevenue)}</strong></article>
+                  <article><span>Criado</span><strong>{dateBR(business.created_at).split(" ")[0]}</strong></article>
                 </div>
 
                 <div className="dev-control-grid">
@@ -793,15 +833,16 @@ export function DevAdminPage() {
                         : "Ativar"}
                   </button>
 
-                  <Link
-                    className="button button-outline"
-                    to={`/menu/${business.slug}`}
-                  >
+                  <Link className="button button-outline" to={`/menu/${business.slug}`} target="_blank">
                     Abrir <ExternalLink size={16} />
+                  </Link>
+                  <Link className="button business-manage-button" to={`/dev/estabelecimentos/${business.id}`}>
+                    Gerenciar <ChevronRight size={16} />
                   </Link>
                 </div>
               </article>
-            ))}
+              );
+            })}
 
             {!filteredBusinesses.length && (
               <div className="empty-state">
