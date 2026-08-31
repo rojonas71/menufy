@@ -1,427 +1,183 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  KeyRound,
-  LockKeyhole,
+  Clock3,
   Mail,
-  RefreshCw,
-  Send,
-  ShieldCheck,
-  X
+  ShieldCheck
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Logo } from "../components/Logo";
-import { supabase } from "../lib/supabase";
-
-type Mode = "request" | "reset";
-type Rule = { label: string; valid: boolean };
-const COOLDOWN = 60;
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 export function ForgotPasswordPage() {
-  const navigate = useNavigate();
-
-  const [mode, setMode] = useState<Mode>("request");
-  const [checkingRecovery, setCheckingRecovery] = useState(true);
-
   const [email, setEmail] = useState("");
-  const [sentEmail, setSentEmail] = useState("");
-  const [seconds, setSeconds] = useState(0);
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState("");
   const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const normalizedEmail = useMemo(
-    () => email.trim().toLowerCase(),
-    [email]
-  );
-
-  const rules = useMemo<Rule[]>(
-    () => [
-      { label: "Pelo menos 8 caracteres", valid: password.length >= 8 },
-      { label: "Uma letra maiúscula", valid: /[A-Z]/.test(password) },
-      { label: "Uma letra minúscula", valid: /[a-z]/.test(password) },
-      { label: "Um número", valid: /\d/.test(password) }
-    ],
-    [password]
-  );
-
-  const validRuleCount = rules.filter((rule) => rule.valid).length;
-  const passwordValid = rules.every((rule) => rule.valid);
-  const passwordsMatch =
-    confirmPassword.length > 0 && password === confirmPassword;
-
-  const strengthLabel =
-    validRuleCount <= 1
-      ? "Fraca"
-      : validRuleCount === 2
-        ? "Razoável"
-        : validRuleCount === 3
-          ? "Boa"
-          : "Forte";
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    if (seconds <= 0) return;
+    if (cooldown <= 0) return;
 
     const timer = window.setInterval(() => {
-      setSeconds((value) => Math.max(0, value - 1));
+      setCooldown((current) => Math.max(0, current - 1));
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [seconds]);
+  }, [cooldown]);
 
-  useEffect(() => {
+  const sendRecovery = async (event: FormEvent) => {
+    event.preventDefault();
+
     const client = supabase;
 
-    if (!client) {
-      setErrorMessage("Supabase não configurado.");
-      setCheckingRecovery(false);
+    if (!client || !isSupabaseConfigured) {
+      setMessage("Supabase não está configurado.");
       return;
     }
 
-    let mounted = true;
+    if (cooldown > 0) return;
 
-    const checkRecovery = async () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(
-        window.location.hash.replace(/^#/, "")
-      );
+    const normalizedEmail = email.trim().toLowerCase();
 
-      const recoveryHint =
-        searchParams.get("type") === "recovery" ||
-        hashParams.get("type") === "recovery" ||
-        Boolean(searchParams.get("code")) ||
-        Boolean(hashParams.get("access_token"));
-
-      const { data } = await client.auth.getSession();
-
-      if (!mounted) return;
-
-      if (data.session && recoveryHint) {
-        setMode("reset");
-      }
-
-      setCheckingRecovery(false);
-    };
-
-    checkRecovery();
-
-    const { data: listener } = client.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setMode("reset");
-        setCheckingRecovery(false);
-        setMessage("");
-        setErrorMessage("");
-      }
-    });
-
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const sendRecovery = async (targetEmail: string) => {
-    const client = supabase;
-
-    if (!client) {
-      setErrorMessage("Supabase não configurado.");
-      return;
-    }
-
-    if (!targetEmail) {
-      setErrorMessage("Digite seu email.");
+    if (!normalizedEmail) {
+      setMessage("Informe seu email.");
       return;
     }
 
     setLoading(true);
     setMessage("");
-    setErrorMessage("");
 
-    const redirectTo = `${window.location.origin}/esqueci-senha`;
+    const redirectTo = `${window.location.origin}/`;
 
-    const { error } = await client.auth.resetPasswordForEmail(targetEmail, {
+    const { error } = await client.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo
     });
 
     if (error) {
-      setErrorMessage(error.message);
-    } else {
-      setSentEmail(targetEmail);
-      setSeconds(COOLDOWN);
-      setMessage(
-        "Se esse email estiver cadastrado, você receberá um link seguro. Ao abrir o link, esta mesma página mostrará o formulário para criar sua nova senha."
-      );
-    }
+      const raw = error.message.toLowerCase();
 
-    setLoading(false);
-  };
+      if (raw.includes("rate limit")) {
+        setMessage("Muitas tentativas em pouco tempo. Aguarde um pouco antes de tentar novamente.");
+      } else if (raw.includes("error sending recovery email")) {
+        setMessage("Não foi possível enviar o email de recuperação. Verifique a configuração de email do projeto.");
+      } else {
+        setMessage(error.message);
+      }
 
-  const handleRequest = async (event: React.FormEvent) => {
-    event.preventDefault();
-    await sendRecovery(normalizedEmail);
-  };
-
-  const resend = async () => {
-    if (!sentEmail || seconds > 0 || loading) return;
-    await sendRecovery(sentEmail);
-  };
-
-  const handleReset = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const client = supabase;
-    if (!client) return;
-
-    setMessage("");
-    setErrorMessage("");
-
-    if (!passwordValid) {
-      setErrorMessage("Sua senha ainda não atende aos requisitos de segurança.");
-      return;
-    }
-
-    if (!passwordsMatch) {
-      setErrorMessage("As senhas não são iguais.");
-      return;
-    }
-
-    setLoading(true);
-
-    const { error } = await client.auth.updateUser({ password });
-
-    if (error) {
-      setErrorMessage(error.message);
       setLoading(false);
       return;
     }
 
-    setMessage("Senha atualizada com sucesso. Entrando no painel...");
-
-    window.setTimeout(() => {
-      navigate("/dashboard", { replace: true });
-    }, 1300);
-
+    setSentTo(normalizedEmail);
+    setCooldown(60);
     setLoading(false);
   };
 
-  if (checkingRecovery) {
-    return (
-      <main className="auth-page">
-        <section className="auth-card forgot-password-card">
-          <Logo />
-          <div className="auth-heading">
-            <span className="eyebrow">Segurança da conta</span>
-            <h1>Validando acesso...</h1>
-          </div>
-          <div className="auth-info-message">
-            <ShieldCheck size={18} />
-            Verificando seu link de recuperação.
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="auth-page">
-      <section className="auth-card forgot-password-card">
-        <Logo />
+    <main className="auth-simple-page">
+      <div className="auth-simple-shell">
+        <Link className="auth-simple-logo" to="/">
+          <Logo />
+        </Link>
 
-        {mode === "request" ? (
-          <>
-            <div className="auth-heading">
-              <span className="eyebrow">Recuperação de acesso</span>
-              <h1>Esqueci minha senha</h1>
-              <p>
-                Informe o email usado no Menufy. Enviaremos um link seguro para
-                esta mesma página.
-              </p>
-            </div>
+        <section className="auth-simple-card">
+          <Link className="auth-back-link" to="/login">
+            <ArrowLeft size={16} />
+            Voltar ao login
+          </Link>
 
-            <form className="auth-form" onSubmit={handleRequest}>
+          <span className="auth-simple-icon">
+            <Mail size={22} />
+          </span>
+
+          <h1>Recuperar sua senha</h1>
+          <p>
+            Informe o email da sua conta. Se ele estiver cadastrado, enviaremos
+            um link seguro para você criar uma nova senha.
+          </p>
+
+          {!sentTo ? (
+            <form onSubmit={sendRecovery} className="auth-simple-form">
               <label>
                 Email
-                <div className="auth-input-with-icon">
-                  <Mail size={18} />
+                <div className="auth-pro-input">
+                  <Mail size={17} />
                   <input
                     type="email"
-                    value={email}
                     autoComplete="email"
-                    placeholder="seuemail@exemplo.com"
+                    value={email}
                     onChange={(event) => setEmail(event.target.value)}
+                    placeholder="voce@email.com"
+                    required
                   />
                 </div>
               </label>
 
               {message && (
-                <div className="auth-success-message">
-                  <CheckCircle2 size={18} />
-                  <div>
-                    <strong>Link solicitado</strong>
-                    <span>{message}</span>
-                  </div>
+                <div className="auth-pro-message error">
+                  <ShieldCheck size={16} />
+                  <span>{message}</span>
                 </div>
-              )}
-
-              {errorMessage && (
-                <div className="auth-error-message">{errorMessage}</div>
-              )}
-
-              <button className="button button-large auth-submit" disabled={loading}>
-                <Send size={18} />
-                {loading ? "Enviando..." : "Enviar link de recuperação"}
-              </button>
-            </form>
-
-            {sentEmail && (
-              <div className="recovery-resend">
-                <p>Não recebeu o email?</p>
-                <button
-                  type="button"
-                  onClick={resend}
-                  disabled={seconds > 0 || loading}
-                >
-                  <RefreshCw size={15} />
-                  {seconds > 0 ? `Reenviar em ${seconds}s` : "Reenviar email"}
-                </button>
-              </div>
-            )}
-
-            <div className="recovery-help">
-              <strong>Como funciona:</strong>
-              <span>1. Você informa seu email.</span>
-              <span>2. O Menufy envia o link seguro.</span>
-              <span>3. Você abre o link recebido.</span>
-              <span>4. Esta mesma página muda para “Criar nova senha”.</span>
-            </div>
-
-            <Link className="auth-back-link" to="/login">
-              <ArrowLeft size={16} />
-              Voltar para entrar
-            </Link>
-          </>
-        ) : (
-          <>
-            <div className="auth-heading">
-              <span className="eyebrow">Segurança da conta</span>
-              <h1>Criar nova senha</h1>
-              <p>
-                Seu link foi validado. Agora escolha uma nova senha para sua conta.
-              </p>
-            </div>
-
-            <form className="auth-form" onSubmit={handleReset}>
-              <label>
-                Nova senha
-                <div className="auth-input-with-icon">
-                  <LockKeyhole size={18} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    autoComplete="new-password"
-                    placeholder="Digite sua nova senha"
-                    onChange={(event) => setPassword(event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="password-visibility-button"
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                    onClick={() => setShowPassword((value) => !value)}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </label>
-
-              <div className="password-strength">
-                <div className="password-strength-head">
-                  <span>Força da senha</span>
-                  <strong>{strengthLabel}</strong>
-                </div>
-                <div className="password-strength-bars">
-                  {[1, 2, 3, 4].map((level) => (
-                    <span
-                      key={level}
-                      className={level <= validRuleCount ? "active" : ""}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="password-rules">
-                {rules.map((rule) => (
-                  <div key={rule.label} className={rule.valid ? "valid" : ""}>
-                    {rule.valid ? <Check size={15} /> : <X size={15} />}
-                    <span>{rule.label}</span>
-                  </div>
-                ))}
-              </div>
-
-              <label>
-                Confirmar nova senha
-                <div className="auth-input-with-icon">
-                  <KeyRound size={18} />
-                  <input
-                    type={showConfirm ? "text" : "password"}
-                    value={confirmPassword}
-                    autoComplete="new-password"
-                    placeholder="Digite novamente"
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="password-visibility-button"
-                    aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
-                    onClick={() => setShowConfirm((value) => !value)}
-                  >
-                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </label>
-
-              {confirmPassword && (
-                <div className={passwordsMatch ? "password-match valid" : "password-match"}>
-                  {passwordsMatch ? <Check size={15} /> : <X size={15} />}
-                  {passwordsMatch
-                    ? "As senhas são iguais"
-                    : "As senhas ainda não são iguais"}
-                </div>
-              )}
-
-              {message && (
-                <div className="auth-success-message">
-                  <CheckCircle2 size={18} />
-                  <div>
-                    <strong>Senha alterada</strong>
-                    <span>{message}</span>
-                  </div>
-                </div>
-              )}
-
-              {errorMessage && (
-                <div className="auth-error-message">{errorMessage}</div>
               )}
 
               <button
-                className="button button-large auth-submit"
-                disabled={loading || !passwordValid || !passwordsMatch}
+                type="submit"
+                className="button button-large button-full"
+                disabled={loading}
               >
-                {loading ? "Atualizando..." : "Salvar nova senha"}
+                {loading ? "Enviando..." : "Enviar link de recuperação"}
+                {!loading && <ArrowRight size={18} />}
               </button>
             </form>
-          </>
-        )}
-      </section>
+          ) : (
+            <div className="auth-recovery-success">
+              <span>
+                <Check size={21} />
+              </span>
+
+              <h2>Confira seu email</h2>
+
+              <p>
+                Se existir uma conta para <strong>{sentTo}</strong>, você receberá
+                um link para redefinir sua senha.
+              </p>
+
+              <div className="auth-recovery-hint">
+                <ShieldCheck size={17} />
+                <span>
+                  Confira também as pastas de spam, promoções ou lixo eletrônico.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="button button-outline button-full"
+                disabled={loading || cooldown > 0}
+                onClick={(event) => {
+                  setSentTo("");
+                  if (cooldown <= 0) sendRecovery(event as unknown as FormEvent);
+                }}
+              >
+                <Clock3 size={16} />
+                {cooldown > 0
+                  ? `Reenviar em ${cooldown}s`
+                  : "Enviar novamente"}
+              </button>
+
+              <Link className="button button-full" to="/login">
+                Voltar ao login
+              </Link>
+            </div>
+          )}
+        </section>
+
+        <p className="auth-simple-footer">
+          Menufy • Recuperação segura de acesso
+        </p>
+      </div>
     </main>
   );
 }

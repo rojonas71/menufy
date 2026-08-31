@@ -1,128 +1,217 @@
-import { useEffect, useMemo, useState } from "react";
-import { Check, CheckCircle2, Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { FormEvent, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Check,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  ShieldCheck
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Logo } from "../components/Logo";
-import { supabase } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
-type Rule = { label: string; valid: boolean };
+function scorePassword(password: string) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[a-z]/.test(password)) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  return score;
+}
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [recoveryReady, setRecoveryReady] = useState(false);
-  const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
-  const rules = useMemo<Rule[]>(() => [
-    { label: "Pelo menos 8 caracteres", valid: password.length >= 8 },
-    { label: "Uma letra maiúscula", valid: /[A-Z]/.test(password) },
-    { label: "Uma letra minúscula", valid: /[a-z]/.test(password) },
-    { label: "Um número", valid: /\\d/.test(password) }
-  ], [password]);
+  const score = useMemo(() => scorePassword(password), [password]);
 
-  const validRuleCount = rules.filter(r => r.valid).length;
-  const passwordValid = rules.every(r => r.valid);
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-  const strengthLabel = validRuleCount <= 1 ? "Fraca" : validRuleCount === 2 ? "Razoável" : validRuleCount === 3 ? "Boa" : "Forte";
-
-  useEffect(() => {
-    const client = supabase;
-    if (!client) { setErrorMessage("Supabase não configurado."); setChecking(false); return; }
-    let mounted = true;
-
-    client.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      if (data.session) setRecoveryReady(true);
-      setChecking(false);
-    });
-
-    const { data: listener } = client.auth.onAuthStateChange((event) => {
-      if (["PASSWORD_RECOVERY", "SIGNED_IN", "TOKEN_REFRESHED"].includes(event)) {
-        setRecoveryReady(true); setChecking(false);
-      }
-    });
-
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
-  }, []);
-
-  const handleSubmit = async (event: React.FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const client = supabase;
-    if (!client) return;
-    setMessage(""); setErrorMessage("");
 
-    if (!passwordValid) { setErrorMessage("Sua senha ainda não atende aos requisitos de segurança."); return; }
-    if (!passwordsMatch) { setErrorMessage("As senhas não são iguais."); return; }
+    const client = supabase;
+
+    if (!client || !isSupabaseConfigured) {
+      setMessage("Supabase não está configurado.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setMessage("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+      setMessage("Use letra maiúscula, minúscula e número.");
+      return;
+    }
+
+    if (password !== confirm) {
+      setMessage("As senhas não coincidem.");
+      return;
+    }
 
     setLoading(true);
-    const { error } = await client.auth.updateUser({ password });
-    if (error) { setErrorMessage(error.message); setLoading(false); return; }
+    setMessage("");
 
-    setMessage("Senha atualizada com sucesso.");
-    window.setTimeout(() => navigate("/dashboard", { replace: true }), 1300);
+    const { error } = await client.auth.updateUser({ password });
+
+    if (error) {
+      const raw = error.message.toLowerCase();
+
+      if (
+        raw.includes("expired") ||
+        raw.includes("invalid") ||
+        raw.includes("session")
+      ) {
+        setMessage("Este link de recuperação é inválido ou expirou. Solicite um novo link.");
+      } else {
+        setMessage(error.message);
+      }
+
+      setLoading(false);
+      return;
+    }
+
     setLoading(false);
+    navigate("/login?reset=1", { replace: true });
   };
 
   return (
-    <main className="auth-page">
-      <section className="auth-card reset-password-card">
-        <Logo />
-        <div className="auth-heading">
-          <span className="eyebrow">Segurança da conta</span>
-          <h1>Criar nova senha</h1>
-          <p>Escolha uma senha forte e diferente das que você usa em outros serviços.</p>
+    <main className="auth-simple-page">
+      <div className="auth-simple-shell">
+        <div className="auth-simple-logo">
+          <Logo />
         </div>
 
-        {checking ? (
-          <div className="auth-info-message"><ShieldCheck size={18} /> Validando seu link de recuperação...</div>
-        ) : recoveryReady ? (
-          <form className="auth-form" onSubmit={handleSubmit}>
+        <section className="auth-simple-card">
+          <span className="auth-simple-icon">
+            <LockKeyhole size={22} />
+          </span>
+
+          <h1>Crie uma nova senha</h1>
+
+          <p>
+            Escolha uma senha segura para proteger sua conta Menufy.
+          </p>
+
+          <form onSubmit={submit} className="auth-simple-form">
             <label>
               Nova senha
-              <div className="auth-input-with-icon">
-                <LockKeyhole size={18} />
-                <input type={showPassword ? "text" : "password"} value={password} autoComplete="new-password" placeholder="Digite sua nova senha" onChange={e => setPassword(e.target.value)} />
-                <button className="password-visibility-button" type="button" onClick={() => setShowPassword(v => !v)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+              <div className="auth-pro-input">
+                <LockKeyhole size={17} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Nova senha"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
               </div>
             </label>
 
-            <div className="password-strength">
-              <div className="password-strength-head"><span>Força da senha</span><strong>{strengthLabel}</strong></div>
-              <div className="password-strength-bars">{[1,2,3,4].map(level => <span key={level} className={level <= validRuleCount ? "active" : ""} />)}</div>
-            </div>
+            <div className="auth-password-strength">
+              <div className={`auth-password-bars score-${score}`}>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <span key={index} className={index < score ? "active" : ""} />
+                ))}
+              </div>
 
-            <div className="password-rules">
-              {rules.map(rule => <div key={rule.label} className={rule.valid ? "valid" : ""}>{rule.valid ? <Check size={15} /> : <X size={15} />}<span>{rule.label}</span></div>)}
+              <div className="auth-password-rules">
+                <span className={password.length >= 8 ? "ok" : ""}>
+                  <Check size={12} />
+                  8 caracteres
+                </span>
+
+                <span className={/[A-Z]/.test(password) ? "ok" : ""}>
+                  <Check size={12} />
+                  Maiúscula
+                </span>
+
+                <span className={/[a-z]/.test(password) ? "ok" : ""}>
+                  <Check size={12} />
+                  Minúscula
+                </span>
+
+                <span className={/\d/.test(password) ? "ok" : ""}>
+                  <Check size={12} />
+                  Número
+                </span>
+              </div>
             </div>
 
             <label>
               Confirmar nova senha
-              <div className="auth-input-with-icon">
-                <KeyRound size={18} />
-                <input type={showConfirm ? "text" : "password"} value={confirmPassword} autoComplete="new-password" placeholder="Digite novamente" onChange={e => setConfirmPassword(e.target.value)} />
-                <button className="password-visibility-button" type="button" onClick={() => setShowConfirm(v => !v)}>{showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+              <div className="auth-pro-input">
+                <LockKeyhole size={17} />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(event) => setConfirm(event.target.value)}
+                  placeholder="Digite novamente"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowConfirm((current) => !current)}
+                >
+                  {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
               </div>
+
+              {confirm && (
+                <span
+                  className={`auth-password-match ${
+                    password === confirm ? "ok" : "error"
+                  }`}
+                >
+                  {password === confirm
+                    ? "As senhas coincidem."
+                    : "As senhas não coincidem."}
+                </span>
+              )}
             </label>
 
-            {confirmPassword && <div className={passwordsMatch ? "password-match valid" : "password-match"}>{passwordsMatch ? <Check size={15} /> : <X size={15} />}{passwordsMatch ? "As senhas são iguais" : "As senhas ainda não são iguais"}</div>}
-            {message && <div className="auth-success-message"><CheckCircle2 size={18} /><div><strong>Senha alterada</strong><span>{message}</span></div></div>}
-            {errorMessage && <div className="auth-error-message">{errorMessage}</div>}
+            {message && (
+              <div className="auth-pro-message error">
+                <ShieldCheck size={16} />
+                <span>{message}</span>
+              </div>
+            )}
 
-            <button className="button button-large auth-submit" disabled={loading || !passwordValid || !passwordsMatch}>{loading ? "Atualizando..." : "Salvar nova senha"}</button>
+            <button
+              type="submit"
+              className="button button-large button-full"
+              disabled={loading}
+            >
+              {loading ? "Salvando..." : "Salvar nova senha"}
+              {!loading && <ArrowRight size={18} />}
+            </button>
           </form>
-        ) : (
-          <div className="expired-recovery">
-            <div className="auth-error-message">Este link é inválido, expirou ou já foi utilizado.</div>
-            <Link className="button button-large auth-submit" to="/esqueci-senha">Solicitar novo link</Link>
-            <Link className="auth-back-link" to="/login">Voltar para entrar</Link>
-          </div>
-        )}
-      </section>
+        </section>
+
+        <p className="auth-simple-footer">
+          Menufy • Proteção de acesso
+        </p>
+      </div>
     </main>
   );
 }
